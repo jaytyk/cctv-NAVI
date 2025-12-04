@@ -1,0 +1,1275 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>CCTV Wall (No-Server)</title>
+  <style>
+    :root{
+      --bg:#0b1220; --panel:#0f1a30; --card:#121f3b; --text:#e8eefc; --muted:#9fb0d0;
+      --line: rgba(255,255,255,.10);
+      --cols: 3;
+      --gap: 10px;
+      --radius: 14px;
+      --shadow: 0 10px 26px rgba(0,0,0,.28);
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, "Noto Sans KR", sans-serif;
+    }
+    *{box-sizing:border-box}
+    body{margin:0;background:linear-gradient(160deg,#071027,#0b1220 45%,#071027);color:var(--text);}
+    a{color:inherit}
+    .app{display:grid;grid-template-columns: 400px 1fr;min-height:100vh;}
+    .side{
+      background:rgba(15,26,48,.86);
+      border-right:1px solid var(--line);
+      backdrop-filter: blur(10px);
+      padding:16px;
+      position:sticky; top:0; height:100vh; overflow:auto;
+    }
+    .brand{display:flex;gap:10px;align-items:center;margin-bottom:10px;}
+    .dot{width:12px;height:12px;border-radius:999px;background:#6aa8ff;box-shadow:0 0 0 6px rgba(106,168,255,.12);}
+    h1{font-size:16px;margin:0}
+    .desc{margin:6px 0 12px;color:var(--muted);font-size:12.5px;line-height:1.45}
+
+    .panel{
+      border:1px solid var(--line);
+      background:rgba(255,255,255,.03);
+      border-radius:16px;
+      padding:12px;
+      margin:10px 0;
+    }
+    .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:8px 0;}
+    label{font-size:12px;color:var(--muted);display:block;margin-bottom:6px}
+    select, input[type="text"], textarea, button, input[type="number"]{
+      border:1px solid var(--line); background:rgba(255,255,255,.05); color:var(--text);
+      border-radius:12px; padding:10px 12px; outline:none;
+    }
+    input[type="text"], input[type="number"], select{width:100%}
+    textarea{width:100%;min-height:100px;resize:vertical;line-height:1.35}
+    button{cursor:pointer}
+    button.primary{background:rgba(106,168,255,.18); border-color:rgba(106,168,255,.35)}
+    button.danger{background:rgba(255,96,96,.14); border-color:rgba(255,96,96,.28)}
+    button.mini{padding:7px 10px;border-radius:10px;font-size:12px}
+    button:active{transform:translateY(1px)}
+    .grid2{display:grid;grid-template-columns: 1fr 1fr;gap:10px}
+    .grid3{display:grid;grid-template-columns: 1fr 1fr 1fr;gap:10px}
+    .hint{font-size:11.5px;color:var(--muted);line-height:1.45}
+    .hint code{font-size:11px; opacity:.9}
+
+    .listHead{display:flex;justify-content:space-between;align-items:end;margin-top:8px}
+    .listHead h2{font-size:13px;margin:0}
+    ul{list-style:none;padding:0;margin:10px 0 0;display:flex;flex-direction:column;gap:8px}
+    li{
+      background:rgba(255,255,255,.04);
+      border:1px solid var(--line);
+      border-radius:14px;
+      padding:10px;
+      display:grid;
+      grid-template-columns: 18px 18px 1fr auto;
+      gap:10px; align-items:center;
+    }
+    .grip{
+      width:18px;height:18px;border-radius:8px;
+      background:rgba(255,255,255,.07);
+      display:grid; place-items:center;
+      user-select:none;
+    }
+    .grip:before{content:"⋮⋮";font-size:12px;opacity:.7}
+    .nameBox{display:flex;flex-direction:column;gap:6px;min-width:0}
+    .name{
+      font-size:13px; font-weight:650;
+      white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+    }
+    .url{
+      font-size:11.5px;color:var(--muted);
+      white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+    }
+    .actions{display:flex;gap:6px;align-items:center}
+    .pill{
+      font-size:11px; color:var(--muted);
+      padding:5px 8px; border:1px solid var(--line);
+      border-radius:999px; background:rgba(255,255,255,.03);
+      user-select:none;
+    }
+
+    .main{padding:16px;}
+    .topbar{
+      display:flex; align-items:center; justify-content:space-between;
+      gap:12px; flex-wrap:wrap; margin-bottom:12px;
+    }
+    .badge{
+      font-size:12px;color:var(--muted);
+      padding:8px 10px;border:1px solid var(--line);border-radius:999px;
+      background:rgba(255,255,255,.04)
+    }
+    .grid{
+      display:grid;
+      grid-template-columns: repeat(var(--cols), minmax(0, 1fr));
+      gap:var(--gap);
+    }
+    .tile{
+      background:rgba(18,31,59,.78);
+      border:1px solid var(--line);
+      border-radius:var(--radius);
+      overflow:hidden;
+      box-shadow:var(--shadow);
+      min-height:240px;
+      display:flex; flex-direction:column;
+    }
+    .tileHead{
+      display:flex; align-items:center; justify-content:space-between;
+      gap:10px;
+      padding:10px 12px;
+      border-bottom:1px solid var(--line);
+      background:rgba(255,255,255,.03);
+    }
+    .tileTitle{font-size:13px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .tileBtns{display:flex;gap:8px;align-items:center}
+    .link{
+      text-decoration:none; color:var(--text); opacity:.85; font-size:12px;
+      padding:6px 8px; border-radius:10px; border:1px solid var(--line);
+      background:rgba(255,255,255,.04)
+    }
+    .tileBody{position:relative;flex:1;background:#000;}
+    iframe{width:100%; height:100%; border:0; background:#000;}
+    .overlay{
+      position:absolute; inset:auto 10px 10px 10px;
+      display:flex; gap:8px; align-items:center; justify-content:space-between;
+      padding:10px 12px;
+      border-radius:12px;
+      border:1px solid var(--line);
+      background:rgba(0,0,0,.45);
+      color:rgba(255,255,255,.9);
+      font-size:12px;
+      pointer-events:none;
+    }
+    .overlay a{pointer-events:auto}
+    .overlay .closeBtn{ pointer-events:auto; } /* ✅ 닫기 버튼 클릭 */
+
+    .placeholder{
+      position:absolute; inset:0;
+      display:grid; place-items:center;
+      padding:24px;
+      color:rgba(255,255,255,.85);
+      background:radial-gradient(circle at 20% 20%, rgba(106,168,255,.10), transparent 45%),
+                 radial-gradient(circle at 80% 30%, rgba(255,255,255,.06), transparent 50%),
+                 #000;
+      text-align:center;
+    }
+    .placeholder .big{font-size:14px;font-weight:750;margin-bottom:8px}
+    .placeholder .small{font-size:12px;color:rgba(255,255,255,.70);line-height:1.45}
+
+    .miniList{
+      display:flex; flex-direction:column; gap:8px;
+      margin-top:10px;
+    }
+    .miniItem{
+      border:1px solid var(--line);
+      background:rgba(255,255,255,.04);
+      border-radius:14px;
+      padding:10px;
+      display:flex;
+      gap:10px;
+      align-items:flex-start;
+      justify-content:space-between;
+    }
+    .miniItem .t{
+      display:flex; flex-direction:column; gap:6px; min-width:0;
+    }
+    .miniItem .t .n{font-size:13px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .miniItem .t .s{font-size:11.5px;color:var(--muted);line-height:1.35}
+    .miniItem .btns{display:flex; gap:8px; align-items:center; flex-shrink:0}
+
+    @media (max-width: 980px){
+      .app{grid-template-columns: 1fr}
+      .side{position:relative;height:auto}
+    }
+  </style>
+</head>
+<body>
+<div class="app">
+  <aside class="side">
+    <div class="brand">
+      <div class="dot"></div>
+      <div>
+        <h1>CCTV Wall</h1>
+        <div class="desc">
+          ✅ 그룹(프리셋)별로 CCTV 목록/순서/열 수를 저장합니다.<br>
+          ✅ 서버 없이 브라우저(LocalStorage)에 저장됩니다.
+        </div>
+      </div>
+    </div>
+
+    <!-- ✅ UTIC 전국 CCTV 지도 바로가기 -->
+    <div class="panel">
+      <div class="row" style="margin-top:0">
+        <a class="link" href="https://www.utic.go.kr/map/map.do?menu=incident" target="_blank" rel="noopener noreferrer">
+          UTIC 전국 CCTV 지도 열기
+        </a>
+        <span class="pill">새 탭</span>
+      </div>
+      <div class="hint">
+        위 링크에서 전국 CCTV를 찾아보고, 보고 싶은 CCTV는 URL을 복사해서 아래 “URL 여러 개 추가”에 붙여넣으면 됩니다.
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="grid2">
+        <div>
+          <label>그룹 선택</label>
+          <select id="groupSelect"></select>
+        </div>
+        <div>
+          <label>가로 열 수(2~4)</label>
+          <select id="cols">
+            <option value="2">2열</option>
+            <option value="3">3열</option>
+            <option value="4">4열</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="row">
+        <button class="primary mini" id="newGroupBtn">+ 그룹 만들기</button>
+        <button class="mini" id="renameGroupBtn">이름 변경</button>
+        <button class="danger mini" id="deleteGroupBtn">삭제</button>
+      </div>
+
+      <div class="grid2">
+        <div>
+          <label>동시 재생 제한</label>
+          <input id="concurrency" type="number" min="1" max="24" step="1" />
+          <div class="hint">CCTV를 많이 켜면 브라우저가 버벅일 수 있어요.</div>
+        </div>
+        <div>
+          <label>빠른 작업</label>
+          <div class="row" style="margin-top:0">
+            <button class="mini" id="enableAllBtn">전체 ON</button>
+            <button class="mini" id="disableAllBtn">전체 OFF</button>
+            <button class="mini" id="refreshAllBtn">전체 새로고침</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="row">
+        <button class="primary mini" id="saveBtn">저장</button>
+        <button class="danger mini" id="resetBtn">전체 초기화</button>
+        <span class="pill" id="savedPill">저장됨</span>
+      </div>
+
+      <div class="row" style="margin-top:10px">
+        <label style="margin:0; display:flex; gap:8px; align-items:center;">
+          <input id="showOverlay" type="checkbox" style="width:auto" />
+          안내 메시지(오버레이) 표시
+        </label>
+      </div>
+    </div>
+
+    <div class="panel">
+      <label>URL 여러 개 추가 (한 줄에 1개)</label>
+      <textarea id="addBox" placeholder="예)
+https://www.utic.go.kr/jsp/map/cctvStream.jsp?cctvid=...
+https://www.utic.go.kr/jsp/map/cctvStream.jsp?cctvid=..."></textarea>
+      <div class="row">
+        <button class="primary mini" id="addBtn">추가 + 자동ON</button>
+        <button class="mini" id="importBtn">JSON 가져오기</button>
+        <button class="mini" id="exportBtn">JSON 내보내기</button>
+      </div>
+      <div class="hint">
+        • 이름은 URL 파라미터(cctvname)에서 자동 추출(필요시 더블클릭으로 수정)<br>
+        • 임베드가 막히면 타일의 “새 탭”으로 확인하세요
+      </div>
+    </div>
+
+    <!-- ✅ 경로 기반 CCTV 추천 -->
+    <div class="panel">
+      <div class="listHead">
+        <h2>경로 CCTV 추천</h2>
+        <span class="pill">주소검색+경로</span>
+      </div>
+
+      <div class="grid2" style="margin-top:8px">
+        <div>
+          <label>출발지 (주소 또는 "위도,경도")</label>
+          <input id="routeFrom" type="text" placeholder="예) 경기 광주시 태전동... 또는 37.40,127.25" />
+        </div>
+        <div>
+          <label>도착지</label>
+          <input id="routeTo" type="text" placeholder="예) 원주 심사평가원 또는 37.35,127.94" />
+        </div>
+      </div>
+
+      <div class="grid2">
+        <div>
+          <label>추천 반경 (m)</label>
+          <input id="routeRadius" type="number" min="200" max="20000" step="100" />
+          <div class="hint">경로에서 몇 m 이내 CCTV를 추천할지</div>
+        </div>
+        <div>
+          <label>ITS CCTV 타입</label>
+          <select id="itsType">
+            <option value="all">all (전체)</option>
+            <option value="ex">ex (고속도로)</option>
+            <option value="its">its (국도/일반)</option>
+          </select>
+          <div class="hint">ITS(OpenAPI) 값입니다.</div>
+        </div>
+      </div>
+
+      <div class="grid2">
+        <div>
+          <label>ITS API Key (필수)</label>
+          <input id="itsApiKey" type="text" placeholder="발급받은 apiKey" />
+        </div>
+        <div>
+          <label>CORS Proxy (선택)</label>
+          <input id="corsProxy" type="text" placeholder="예) https://YOUR-WORKER.workers.dev/?url=" />
+        </div>
+      </div>
+
+      <div class="row">
+        <button class="primary mini" id="routeRunBtn">경로 찾고 CCTV 추천</button>
+        <button class="mini" id="routeAddAllBtn" disabled>추천 전체 추가</button>
+        <a class="link" id="routeOpenUticBtn" href="https://www.utic.go.kr/map/map.do?menu=incident" target="_blank" rel="noopener noreferrer">UTIC 지도</a>
+      </div>
+
+      <div class="hint" id="routeStatus">준비됨</div>
+      <div class="miniList" id="routeResults"></div>
+
+      <div class="hint" style="margin-top:10px">
+        • 추천은 ITS CCTV OpenAPI(키 필요)로 “경로 주변 CCTV”를 가져와서 정렬합니다. :contentReference[oaicite:2]{index=2}<br>
+        • API 호출이 CORS로 막히면 위 “CORS Proxy”에 아래 2) Cloudflare Worker 주소를 넣어주세요.
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="listHead">
+        <h2>카메라 목록</h2>
+        <div class="hint">드래그(⋮⋮)로 순서 변경</div>
+      </div>
+
+      <div class="grid2">
+        <div>
+          <label>검색</label>
+          <input id="searchBox" type="text" placeholder="이름 또는 URL 검색" />
+        </div>
+        <div>
+          <label>정렬</label>
+          <select id="sortMode">
+            <option value="custom" selected>사용자 순서(드래그)</option>
+            <option value="name">이름(가나다)</option>
+            <option value="enabled">ON 우선</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="row">
+        <button class="mini" id="selectFirstNBtn">ON: 앞에서 N개만</button>
+        <input id="firstN" type="number" min="1" max="50" step="1" style="width:110px" />
+        <span class="pill" id="dragHint">검색중엔 드래그 비활성</span>
+      </div>
+
+      <ul id="list"></ul>
+    </div>
+  </aside>
+
+  <main class="main">
+    <div class="topbar">
+      <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap">
+        <div class="badge" id="statusBadge">표시중: 0개</div>
+        <div class="badge" id="groupBadge">그룹: -</div>
+      </div>
+      <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap">
+        <a class="link" href="https://www.utic.go.kr/map/map.do?menu=incident" target="_blank" rel="noopener noreferrer">UTIC 전국 CCTV</a>
+      </div>
+    </div>
+    <div class="grid" id="grid"></div>
+  </main>
+</div>
+
+<script>
+(() => {
+  const LS_KEY = "cctv_wall_v3";
+
+  const uid = () => (self.crypto?.randomUUID?.() ?? ("id_" + Math.random().toString(16).slice(2)));
+  const clamp = (n, a, b) => Math.max(a, Math.min(b, n));
+
+  const safeDecode = (v) => {
+    if (!v) return "";
+    try { v = decodeURIComponent(v); } catch {}
+    try { v = decodeURIComponent(v); } catch {}
+    return v;
+  };
+
+  const parseUrlToItem = (raw) => {
+    let u;
+    try { u = new URL(raw.trim()); } catch { return null; }
+    const p = u.searchParams;
+    const id = p.get("cctvid") || uid();
+    const name = safeDecode(p.get("cctvname")) || id;
+    return { id, name, url: u.toString(), enabled: true };
+  };
+
+  const defaultState = () => ({
+    version: 3,
+    activeGroupId: "default",
+    groups: [{
+      id: "default",
+      name: "기본",
+      cols: 3,
+      concurrency: 8,
+      items: [{
+        id: "L903134",
+        name: "직동IC",
+        url: "https://www.utic.go.kr/jsp/map/cctvStream.jsp?cctvid=L903134&cctvname=%25EC%25A7%2581%25EB%258F%2599IC&kind=EE&cctvip=60114&cctvch=undefined&id=undefined&cctvpasswd=undefined&cctvport=undefined&minX=127.09624099508918&minY=37.363136888364586&maxX=127.30318308497776&maxY=37.456634944990036",
+        enabled: true
+      }]
+    }],
+    ui: {
+      sortMode: "custom",
+      search: "",
+      showOverlay: true,
+      itsApiKey: "",
+      itsType: "all",
+      routeRadiusM: 2000,
+      corsProxy: ""
+    }
+  });
+
+  let state = defaultState();
+
+  const routeState = {
+    status: "준비됨",
+    routeInfo: null,
+    results: [] // {name,url,coordx,coordy,distanceM}
+  };
+
+  const $ = (id) => document.getElementById(id);
+
+  const $groupSelect = $("groupSelect");
+  const $cols = $("cols");
+  const $concurrency = $("concurrency");
+  const $saveBtn = $("saveBtn");
+  const $resetBtn = $("resetBtn");
+  const $newGroupBtn = $("newGroupBtn");
+  const $renameGroupBtn = $("renameGroupBtn");
+  const $deleteGroupBtn = $("deleteGroupBtn");
+
+  const $enableAllBtn = $("enableAllBtn");
+  const $disableAllBtn = $("disableAllBtn");
+  const $refreshAllBtn = $("refreshAllBtn");
+
+  const $addBox = $("addBox");
+  const $addBtn = $("addBtn");
+  const $importBtn = $("importBtn");
+  const $exportBtn = $("exportBtn");
+
+  const $searchBox = $("searchBox");
+  const $sortMode = $("sortMode");
+  const $selectFirstNBtn = $("selectFirstNBtn");
+  const $firstN = $("firstN");
+
+  const $showOverlay = $("showOverlay");
+
+  const $routeFrom = $("routeFrom");
+  const $routeTo = $("routeTo");
+  const $routeRadius = $("routeRadius");
+  const $itsType = $("itsType");
+  const $itsApiKey = $("itsApiKey");
+  const $corsProxy = $("corsProxy");
+  const $routeRunBtn = $("routeRunBtn");
+  const $routeAddAllBtn = $("routeAddAllBtn");
+  const $routeStatus = $("routeStatus");
+  const $routeResults = $("routeResults");
+
+  const $list = $("list");
+  const $grid = $("grid");
+  const $status = $("statusBadge");
+  const $groupBadge = $("groupBadge");
+  const $savedPill = $("savedPill");
+  const $dragHint = $("dragHint");
+
+  const load = () => {
+    const saved = localStorage.getItem(LS_KEY);
+    if (!saved) return;
+    try {
+      const obj = JSON.parse(saved);
+      if (obj && typeof obj === "object" && Array.isArray(obj.groups)) state = obj;
+    } catch {}
+  };
+
+  const save = () => {
+    localStorage.setItem(LS_KEY, JSON.stringify(state));
+    flashSaved();
+    render();
+  };
+
+  const flashSaved = () => {
+    $savedPill.textContent = "저장됨";
+    $savedPill.style.borderColor = "rgba(106,168,255,.45)";
+    setTimeout(() => {
+      $savedPill.style.borderColor = "rgba(255,255,255,.10)";
+    }, 550);
+  };
+
+  const hardReset = () => {
+    localStorage.removeItem(LS_KEY);
+    location.reload();
+  };
+
+  const getGroup = () => state.groups.find(g => g.id === state.activeGroupId) ?? state.groups[0];
+  const setActiveGroup = (gid) => {
+    state.activeGroupId = gid;
+    const g = getGroup();
+    document.documentElement.style.setProperty("--cols", String(clamp(g.cols || 3, 2, 4)));
+    render();
+  };
+
+  const setCols = (n) => {
+    const g = getGroup();
+    g.cols = clamp(Number(n), 2, 4);
+    document.documentElement.style.setProperty("--cols", String(g.cols));
+    save();
+  };
+
+  const setConcurrency = (n) => {
+    const g = getGroup();
+    g.concurrency = clamp(Number(n), 1, 24);
+    save();
+  };
+
+  const normalize = () => {
+    state.groups = state.groups.map(g => ({
+      id: g.id || uid(),
+      name: g.name || "그룹",
+      cols: clamp(Number(g.cols || 3), 2, 4),
+      concurrency: clamp(Number(g.concurrency || 8), 1, 24),
+      items: Array.isArray(g.items) ? g.items.map(it => ({
+        id: it.id || uid(),
+        name: it.name || it.id || "CCTV",
+        url: it.url || "",
+        enabled: !!it.enabled
+      })) : []
+    }));
+    if (!state.groups.find(g => g.id === state.activeGroupId)) {
+      state.activeGroupId = state.groups[0]?.id || "default";
+    }
+
+    state.ui = state.ui || {};
+    if (!("sortMode" in state.ui)) state.ui.sortMode = "custom";
+    if (!("search" in state.ui)) state.ui.search = "";
+    if (typeof state.ui.showOverlay !== "boolean") state.ui.showOverlay = true;
+
+    if (typeof state.ui.itsApiKey !== "string") state.ui.itsApiKey = "";
+    if (typeof state.ui.itsType !== "string") state.ui.itsType = "all";
+    if (typeof state.ui.routeRadiusM !== "number") state.ui.routeRadiusM = 2000;
+    if (typeof state.ui.corsProxy !== "string") state.ui.corsProxy = "";
+  };
+
+  const refreshIframe = (iframe) => {
+    const src = iframe.dataset.src;
+    iframe.src = "about:blank";
+    setTimeout(() => { iframe.src = src; }, 60);
+  };
+
+  // ----- Route / Geocode / ITS CCTV -----
+
+  const parseLatLng = (s) => {
+    const m = (s || "").trim().match(/^(-?\d+(?:\.\d+)?)\s*,\s*(-?\d+(?:\.\d+)?)$/);
+    if (!m) return null;
+    const a = Number(m[1]), b = Number(m[2]);
+    if (!isFinite(a) || !isFinite(b)) return null;
+    // 보통 "위도,경도"로 입력하므로 (lat,lng)
+    return { lat: a, lon: b };
+  };
+
+  const geocodeNominatim = async (query) => {
+    const url =
+      "https://nominatim.openstreetmap.org/search" +
+      `?format=json&limit=1&countrycodes=kr&accept-language=ko&q=${encodeURIComponent(query)}`;
+    const r = await fetch(url, { headers: { "Accept": "application/json" } });
+    if (!r.ok) throw new Error("주소검색 실패(Nominatim)");
+    const j = await r.json();
+    if (!j?.length) throw new Error("주소검색 결과 없음");
+    return { lat: Number(j[0].lat), lon: Number(j[0].lon) };
+  };
+
+  const getCoord = async (text) => {
+    const direct = parseLatLng(text);
+    if (direct) return direct;
+    return await geocodeNominatim(text);
+  };
+
+  const osrmRoute = async (from, to) => {
+    const url = `https://router.project-osrm.org/route/v1/driving/${from.lon},${from.lat};${to.lon},${to.lat}?overview=full&geometries=geojson`;
+    const r = await fetch(url, { headers: { "Accept": "application/json" } });
+    if (!r.ok) throw new Error("경로 조회 실패(OSRM)");
+    const j = await r.json();
+    const route = j?.routes?.[0];
+    if (!route?.geometry?.coordinates?.length) throw new Error("경로 결과 없음");
+    return {
+      distanceM: route.distance,
+      durationS: route.duration,
+      coords: route.geometry.coordinates.map(([lon,lat]) => ({ lon, lat }))
+    };
+  };
+
+  // 간단 거리계산(미터)
+  const toRad = (d) => d * Math.PI / 180;
+  const haversineM = (a, b) => {
+    const R = 6371000;
+    const dLat = toRad(b.lat - a.lat);
+    const dLon = toRad(b.lon - a.lon);
+    const s1 = Math.sin(dLat/2), s2 = Math.sin(dLon/2);
+    const q = s1*s1 + Math.cos(toRad(a.lat))*Math.cos(toRad(b.lat))*s2*s2;
+    return 2*R*Math.asin(Math.sqrt(q));
+  };
+
+  const projectMeters = (p, lat0) => {
+    const R = 6371000;
+    const x = toRad(p.lon) * R * Math.cos(toRad(lat0));
+    const y = toRad(p.lat) * R;
+    return { x, y };
+  };
+
+  // 점-선분 거리(미터), equirectangular 근사
+  const pointToSegmentM = (p, a, b, lat0) => {
+    const P = projectMeters(p, lat0);
+    const A = projectMeters(a, lat0);
+    const B = projectMeters(b, lat0);
+    const vx = B.x - A.x, vy = B.y - A.y;
+    const wx = P.x - A.x, wy = P.y - A.y;
+    const c1 = vx*wx + vy*wy;
+    if (c1 <= 0) return Math.hypot(P.x - A.x, P.y - A.y);
+    const c2 = vx*vx + vy*vy;
+    if (c2 <= c1) return Math.hypot(P.x - B.x, P.y - B.y);
+    const t = c1 / c2;
+    const px = A.x + t*vx, py = A.y + t*vy;
+    return Math.hypot(P.x - px, P.y - py);
+  };
+
+  const minDistanceToPolylineM = (p, line) => {
+    if (line.length < 2) return Infinity;
+    const lat0 = p.lat;
+    let best = Infinity;
+    for (let i=0; i<line.length-1; i++){
+      const d = pointToSegmentM(p, line[i], line[i+1], lat0);
+      if (d < best) best = d;
+    }
+    return best;
+  };
+
+  const bboxWithMarginDeg = (points, marginM) => {
+    let minLat=  90, maxLat= -90, minLon= 180, maxLon=-180;
+    for (const p of points){
+      if (p.lat < minLat) minLat = p.lat;
+      if (p.lat > maxLat) maxLat = p.lat;
+      if (p.lon < minLon) minLon = p.lon;
+      if (p.lon > maxLon) maxLon = p.lon;
+    }
+    const midLat = (minLat + maxLat)/2;
+    const dLat = marginM / 110574; // ~m per deg lat
+    const dLon = marginM / (111320 * Math.cos(toRad(midLat)) || 1);
+    return {
+      minX: (minLon - dLon),
+      maxX: (maxLon + dLon),
+      minY: (minLat - dLat),
+      maxY: (maxLat + dLat)
+    };
+  };
+
+  const buildItsUrl = ({ apiKey, type, minX, maxX, minY, maxY }) => {
+    const u = new URL("https://openapi.its.go.kr:9443/cctvInfo");
+    u.searchParams.set("apiKey", apiKey);
+    u.searchParams.set("type", type);        // all/ex/its
+    u.searchParams.set("cctvType", "1");     // 1: 실시간
+    u.searchParams.set("minX", String(minX));
+    u.searchParams.set("maxX", String(maxX));
+    u.searchParams.set("minY", String(minY));
+    u.searchParams.set("maxY", String(maxY));
+    u.searchParams.set("getType", "json");
+    return u.toString();
+  };
+
+  const fetchJsonMaybeViaProxy = async (url) => {
+    const proxy = (state.ui.corsProxy || "").trim();
+    const finalUrl = proxy ? (proxy + encodeURIComponent(url)) : url;
+    const r = await fetch(finalUrl, { headers: { "Accept": "application/json" } });
+    if (!r.ok) throw new Error(`API 호출 실패 (${r.status})`);
+    return await r.json();
+  };
+
+  const itsFetchCctvByBbox = async ({ apiKey, type, bbox }) => {
+    const url = buildItsUrl({ apiKey, type, ...bbox });
+    const j = await fetchJsonMaybeViaProxy(url);
+    const data = j?.response?.data;
+    if (!Array.isArray(data)) return [];
+    return data.map(x => ({
+      name: x.cctvname || x.cctvNm || "CCTV",
+      url: x.cctvurl || x.liveUrl || x.vodUrl || "",
+      coordx: Number(x.coordx ?? x.cctvX),
+      coordy: Number(x.coordy ?? x.cctvY)
+    })).filter(x => x.url && isFinite(x.coordx) && isFinite(x.coordy));
+  };
+
+  const routeRecommend = async ({ fromText, toText, apiKey, type, radiusM }) => {
+    routeState.status = "좌표 변환중…";
+    routeState.results = [];
+    routeState.routeInfo = null;
+    renderRoutePanel();
+
+    const from = await getCoord(fromText);
+    const to = await getCoord(toText);
+
+    routeState.status = "경로 계산중…";
+    renderRoutePanel();
+
+    const r = await osrmRoute(from, to);
+    routeState.routeInfo = r;
+
+    // 경로 길이에 따라 bbox 요청을 여러 번(최대 10번)으로 쪼갬
+    const distanceM = r.distanceM || 0;
+    const windows = clamp(Math.ceil(distanceM / 120000), 1, 10); // 120km당 1회
+    const pts = r.coords;
+    const marginM = Math.max(3000, radiusM); // bbox 마진
+
+    routeState.status = `CCTV 조회중… (요청 ${windows}회)`;
+    renderRoutePanel();
+
+    const all = new Map();
+    for (let i=0; i<windows; i++){
+      const a = Math.floor((i / windows) * pts.length);
+      const b = Math.floor(((i+1) / windows) * pts.length);
+      const slice = pts.slice(a, Math.max(b, a+2));
+      const bbox = bboxWithMarginDeg(slice, marginM);
+      const list = await itsFetchCctvByBbox({ apiKey, type, bbox });
+      for (const it of list){
+        const key = `${it.name}|${it.coordx.toFixed(6)}|${it.coordy.toFixed(6)}|${it.url}`;
+        if (!all.has(key)) all.set(key, it);
+      }
+    }
+
+    routeState.status = `경로 주변 CCTV 필터링/정렬중… (후보 ${all.size}개)`;
+    renderRoutePanel();
+
+    const line = pts;
+    const scored = [];
+    for (const it of all.values()){
+      const p = { lon: it.coordx, lat: it.coordy };
+      const d = minDistanceToPolylineM(p, line);
+      if (d <= radiusM) scored.push({ ...it, distanceM: d });
+    }
+    scored.sort((a,b) => a.distanceM - b.distanceM);
+
+    routeState.results = scored.slice(0, 30); // 상위 30개 보여주기
+    const km = (r.distanceM/1000).toFixed(1);
+    const min = Math.round(r.durationS/60);
+    routeState.status = `완료 ✅ (경로 ${km}km / ${min}분) — 추천 ${routeState.results.length}개`;
+    renderRoutePanel();
+  };
+
+  const renderRoutePanel = () => {
+    $routeStatus.textContent = routeState.status;
+
+    const canAddAll = routeState.results.length > 0;
+    $routeAddAllBtn.disabled = !canAddAll;
+
+    $routeResults.innerHTML = "";
+    for (const r of routeState.results){
+      const item = document.createElement("div");
+      item.className = "miniItem";
+
+      const left = document.createElement("div");
+      left.className = "t";
+
+      const n = document.createElement("div");
+      n.className = "n";
+      n.textContent = r.name;
+
+      const s = document.createElement("div");
+      s.className = "s";
+      s.textContent = `경로까지 약 ${Math.round(r.distanceM)}m · (${r.coordy.toFixed(5)}, ${r.coordx.toFixed(5)})`;
+
+      left.appendChild(n);
+      left.appendChild(s);
+
+      const btns = document.createElement("div");
+      btns.className = "btns";
+
+      const open = document.createElement("a");
+      open.className = "link";
+      open.href = r.url;
+      open.target = "_blank";
+      open.rel = "noopener noreferrer";
+      open.textContent = "새 탭";
+
+      const add = document.createElement("button");
+      add.className = "mini primary";
+      add.textContent = "추가";
+      add.addEventListener("click", () => {
+        const g = getGroup();
+        // 충돌 방지용 id
+        const id = "ITS_" + (r.coordx.toFixed(6) + "_" + r.coordy.toFixed(6)).replaceAll(".","");
+        const exists = g.items.find(x => x.url === r.url);
+        if (exists){
+          exists.enabled = true;
+          exists.name = r.name || exists.name;
+        } else {
+          g.items.push({ id, name: r.name || id, url: r.url, enabled: true });
+        }
+        save();
+      });
+
+      btns.appendChild(open);
+      btns.appendChild(add);
+
+      item.appendChild(left);
+      item.appendChild(btns);
+      $routeResults.appendChild(item);
+    }
+  };
+
+  // ----- Render main -----
+
+  const render = () => {
+    normalize();
+    const g = getGroup();
+
+    // group select
+    $groupSelect.innerHTML = "";
+    state.groups.forEach(gr => {
+      const opt = document.createElement("option");
+      opt.value = gr.id;
+      opt.textContent = gr.name;
+      if (gr.id === state.activeGroupId) opt.selected = true;
+      $groupSelect.appendChild(opt);
+    });
+
+    // controls
+    $cols.value = String(g.cols);
+    $concurrency.value = String(g.concurrency);
+    $sortMode.value = state.ui.sortMode || "custom";
+    $searchBox.value = state.ui.search || "";
+    $firstN.value = $firstN.value || "8";
+    $showOverlay.checked = !!state.ui.showOverlay;
+
+    $itsApiKey.value = state.ui.itsApiKey || "";
+    $itsType.value = state.ui.itsType || "all";
+    $routeRadius.value = String(state.ui.routeRadiusM || 2000);
+    $corsProxy.value = state.ui.corsProxy || "";
+
+    document.documentElement.style.setProperty("--cols", String(g.cols));
+    $groupBadge.textContent = `그룹: ${g.name}`;
+    $dragHint.style.display = (state.ui.search?.trim() ? "inline-block" : "none");
+
+    // route panel
+    renderRoutePanel();
+
+    // list (sort/filter)
+    const q = (state.ui.search || "").trim().toLowerCase();
+    let viewItems = [...g.items];
+
+    if (state.ui.sortMode === "name") {
+      viewItems.sort((a,b) => (a.name||"").localeCompare((b.name||""), "ko"));
+    } else if (state.ui.sortMode === "enabled") {
+      viewItems.sort((a,b) => Number(b.enabled) - Number(a.enabled));
+    }
+
+    if (q) {
+      viewItems = viewItems.filter(it =>
+        (it.name||"").toLowerCase().includes(q) ||
+        (it.url||"").toLowerCase().includes(q)
+      );
+    }
+
+    $list.innerHTML = "";
+    viewItems.forEach((item) => {
+      const li = document.createElement("li");
+      li.draggable = !q && (state.ui.sortMode === "custom");
+      li.dataset.id = item.id;
+
+      const grip = document.createElement("div");
+      grip.className = "grip";
+      grip.title = li.draggable ? "드래그해서 순서 변경" : "검색/자동정렬 상태에서는 드래그 불가";
+
+      const cb = document.createElement("input");
+      cb.type = "checkbox";
+      cb.checked = !!item.enabled;
+      cb.addEventListener("change", () => { item.enabled = cb.checked; save(); });
+
+      const nameBox = document.createElement("div");
+      nameBox.className = "nameBox";
+
+      const name = document.createElement("div");
+      name.className = "name";
+      name.title = "더블클릭해서 이름 수정";
+      name.textContent = item.name;
+
+      name.addEventListener("dblclick", () => {
+        const next = prompt("표시 이름", item.name);
+        if (next !== null) {
+          item.name = next.trim() || item.name;
+          save();
+        }
+      });
+
+      const url = document.createElement("div");
+      url.className = "url";
+      url.textContent = item.url;
+
+      nameBox.appendChild(name);
+      nameBox.appendChild(url);
+
+      const actions = document.createElement("div");
+      actions.className = "actions";
+
+      const open = document.createElement("a");
+      open.className = "link";
+      open.style.padding = "7px 9px";
+      open.style.borderRadius = "10px";
+      open.href = item.url;
+      open.target = "_blank";
+      open.rel = "noopener noreferrer";
+      open.textContent = "새 탭";
+
+      const del = document.createElement("button");
+      del.className = "mini danger";
+      del.textContent = "삭제";
+      del.addEventListener("click", () => {
+        g.items = g.items.filter(x => x.id !== item.id);
+        save();
+      });
+
+      actions.appendChild(open);
+      actions.appendChild(del);
+
+      li.appendChild(grip);
+      li.appendChild(cb);
+      li.appendChild(nameBox);
+      li.appendChild(actions);
+
+      if (li.draggable) {
+        li.addEventListener("dragstart", (e) => {
+          e.dataTransfer.setData("text/plain", item.id);
+          e.dataTransfer.effectAllowed = "move";
+        });
+        li.addEventListener("dragover", (e) => {
+          e.preventDefault();
+          e.dataTransfer.dropEffect = "move";
+        });
+        li.addEventListener("drop", (e) => {
+          e.preventDefault();
+          const draggedId = e.dataTransfer.getData("text/plain");
+          const targetId = li.dataset.id;
+          if (!draggedId || draggedId === targetId) return;
+
+          const from = g.items.findIndex(x => x.id === draggedId);
+          const to = g.items.findIndex(x => x.id === targetId);
+          if (from < 0 || to < 0) return;
+
+          const [moved] = g.items.splice(from, 1);
+          g.items.splice(to, 0, moved);
+          save();
+        });
+      }
+
+      $list.appendChild(li);
+    });
+
+    // grid render with concurrency
+    $grid.innerHTML = "";
+    const enabled = g.items.filter(it => it.enabled);
+    const limit = clamp(Number(g.concurrency || 8), 1, 24);
+
+    $status.textContent = `표시 ON: ${enabled.length}개 (동시재생: ${Math.min(enabled.length, limit)}개)`;
+
+    enabled.forEach((item, idx) => {
+      const tile = document.createElement("div");
+      tile.className = "tile";
+
+      const head = document.createElement("div");
+      head.className = "tileHead";
+
+      const title = document.createElement("div");
+      title.className = "tileTitle";
+      title.textContent = item.name;
+
+      const btns = document.createElement("div");
+      btns.className = "tileBtns";
+
+      const open = document.createElement("a");
+      open.className = "link";
+      open.href = item.url;
+      open.target = "_blank";
+      open.rel = "noopener noreferrer";
+      open.textContent = "새 탭";
+
+      const refresh = document.createElement("button");
+      refresh.className = "mini";
+      refresh.textContent = "↻";
+      refresh.title = "이 타일 새로고침";
+
+      btns.appendChild(refresh);
+      btns.appendChild(open);
+
+      head.appendChild(title);
+      head.appendChild(btns);
+
+      const body = document.createElement("div");
+      body.className = "tileBody";
+
+      if (idx < limit) {
+        const iframe = document.createElement("iframe");
+        iframe.loading = "lazy";
+        iframe.dataset.src = item.url;
+        iframe.src = item.url;
+        iframe.title = item.name;
+
+        refresh.addEventListener("click", () => refreshIframe(iframe));
+
+        if (state.ui.showOverlay !== false) {
+          const overlay = document.createElement("div");
+          overlay.className = "overlay";
+          overlay.innerHTML = `<span>안 보이면 임베드 차단/혼합콘텐츠일 수 있어요.</span>`;
+
+          const actions = document.createElement("div");
+          actions.style.display = "flex";
+          actions.style.gap = "8px";
+          actions.style.alignItems = "center";
+
+          const link = document.createElement("a");
+          link.className = "link";
+          link.href = item.url;
+          link.target = "_blank";
+          link.rel = "noopener noreferrer";
+          link.textContent = "새 탭으로 보기";
+
+          const close = document.createElement("button");
+          close.className = "mini closeBtn";
+          close.textContent = "닫기";
+          close.title = "안내 메시지를 숨깁니다(다음부터도 안 뜸)";
+          close.addEventListener("click", (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            state.ui.showOverlay = false;
+            save();
+          });
+
+          actions.appendChild(link);
+          actions.appendChild(close);
+          overlay.appendChild(actions);
+
+          body.appendChild(iframe);
+          body.appendChild(overlay);
+        } else {
+          body.appendChild(iframe);
+        }
+      } else {
+        refresh.disabled = true;
+        refresh.title = "동시재생 제한으로 대기중";
+        const ph = document.createElement("div");
+        ph.className = "placeholder";
+        ph.innerHTML = `
+          <div>
+            <div class="big">대기중 (동시 재생 제한)</div>
+            <div class="small">
+              이 CCTV는 ON 상태지만 동시 재생 제한(${limit}) 때문에 로드되지 않았어요.<br>
+              제한을 늘리거나 다른 CCTV를 OFF로 바꾸세요.
+            </div>
+          </div>`;
+        body.appendChild(ph);
+      }
+
+      tile.appendChild(head);
+      tile.appendChild(body);
+      $grid.appendChild(tile);
+    });
+  };
+
+  // ----- Events -----
+  $groupSelect.addEventListener("change", () => { setActiveGroup($groupSelect.value); });
+
+  $cols.addEventListener("change", () => setCols($cols.value));
+  $concurrency.addEventListener("change", () => setConcurrency($concurrency.value));
+
+  $saveBtn.addEventListener("click", save);
+  $resetBtn.addEventListener("click", hardReset);
+
+  $showOverlay.addEventListener("change", () => {
+    state.ui.showOverlay = $showOverlay.checked;
+    save();
+  });
+
+  $newGroupBtn.addEventListener("click", () => {
+    const name = prompt("새 그룹 이름", "새 그룹");
+    if (!name) return;
+    const g = { id: uid(), name: name.trim(), cols: 3, concurrency: 8, items: [] };
+    state.groups.push(g);
+    state.activeGroupId = g.id;
+    save();
+  });
+
+  $renameGroupBtn.addEventListener("click", () => {
+    const g = getGroup();
+    const name = prompt("그룹 이름 변경", g.name);
+    if (name === null) return;
+    g.name = (name.trim() || g.name);
+    save();
+  });
+
+  $deleteGroupBtn.addEventListener("click", () => {
+    if (state.groups.length <= 1) return alert("그룹은 최소 1개가 필요해요.");
+    const g = getGroup();
+    const ok = confirm(`"${g.name}" 그룹을 삭제할까요?`);
+    if (!ok) return;
+    state.groups = state.groups.filter(x => x.id !== g.id);
+    state.activeGroupId = state.groups[0].id;
+    save();
+  });
+
+  $enableAllBtn.addEventListener("click", () => {
+    const g = getGroup();
+    g.items.forEach(it => it.enabled = true);
+    save();
+  });
+
+  $disableAllBtn.addEventListener("click", () => {
+    const g = getGroup();
+    g.items.forEach(it => it.enabled = false);
+    save();
+  });
+
+  $refreshAllBtn.addEventListener("click", () => {
+    document.querySelectorAll("iframe[data-src]").forEach((iframe) => {
+      const src = iframe.dataset.src;
+      iframe.src = "about:blank";
+      setTimeout(() => { iframe.src = src; }, 60);
+    });
+  });
+
+  $addBtn.addEventListener("click", () => {
+    const g = getGroup();
+    const lines = $addBox.value.split("\n").map(s => s.trim()).filter(Boolean);
+    if (!lines.length) return;
+
+    for (const line of lines) {
+      const item = parseUrlToItem(line);
+      if (!item) continue;
+
+      const exists = g.items.find(x => x.id === item.id);
+      if (exists) {
+        exists.url = item.url;
+        exists.name = item.name || exists.name;
+        exists.enabled = true;
+      } else {
+        g.items.push(item);
+      }
+    }
+    $addBox.value = "";
+    save();
+  });
+
+  $exportBtn.addEventListener("click", async () => {
+    const json = JSON.stringify(state, null, 2);
+    try { await navigator.clipboard.writeText(json); } catch {}
+    alert("전체 설정 JSON을 클립보드에 복사했어요.");
+  });
+
+  $importBtn.addEventListener("click", () => {
+    const json = prompt("붙여넣을 전체 설정 JSON");
+    if (!json) return;
+    try {
+      const obj = JSON.parse(json);
+      if (!obj || typeof obj !== "object" || !Array.isArray(obj.groups)) throw new Error("bad");
+      state = obj;
+      save();
+    } catch {
+      alert("JSON 형식이 올바르지 않아요.");
+    }
+  });
+
+  $searchBox.addEventListener("input", () => {
+    state.ui.search = $searchBox.value;
+    render();
+  });
+
+  $sortMode.addEventListener("change", () => {
+    state.ui.sortMode = $sortMode.value;
+    render();
+  });
+
+  $selectFirstNBtn.addEventListener("click", () => {
+    const g = getGroup();
+    const n = clamp(Number($firstN.value || 8), 1, 200);
+    g.items.forEach((it, idx) => it.enabled = (idx < n));
+    save();
+  });
+
+  // route panel events
+  const syncRouteInputsToState = () => {
+    state.ui.itsApiKey = $itsApiKey.value.trim();
+    state.ui.itsType = $itsType.value;
+    state.ui.routeRadiusM = clamp(Number($routeRadius.value || 2000), 200, 20000);
+    state.ui.corsProxy = $corsProxy.value.trim();
+  };
+  $itsApiKey.addEventListener("change", () => { syncRouteInputsToState(); save(); });
+  $itsType.addEventListener("change", () => { syncRouteInputsToState(); save(); });
+  $routeRadius.addEventListener("change", () => { syncRouteInputsToState(); save(); });
+  $corsProxy.addEventListener("change", () => { syncRouteInputsToState(); save(); });
+
+  $routeRunBtn.addEventListener("click", async () => {
+    try {
+      syncRouteInputsToState();
+      const apiKey = state.ui.itsApiKey;
+      if (!apiKey) {
+        routeState.status = "ITS apiKey가 필요합니다. (its.go.kr OpenAPI에서 발급)";
+        renderRoutePanel();
+        return;
+      }
+      const fromText = ($routeFrom.value || "").trim();
+      const toText = ($routeTo.value || "").trim();
+      if (!fromText || !toText) {
+        routeState.status = "출발지/도착지를 입력하세요.";
+        renderRoutePanel();
+        return;
+      }
+      await routeRecommend({
+        fromText, toText,
+        apiKey,
+        type: state.ui.itsType || "all",
+        radiusM: state.ui.routeRadiusM || 2000
+      });
+    } catch (e) {
+      const msg = String(e?.message || e);
+      routeState.status = "실패 ❌ " + msg +
+        (msg.toLowerCase().includes("fetch") ? " (CORS면 Cloudflare Worker 프록시를 설정해보세요)" : "");
+      routeState.results = [];
+      routeState.routeInfo = null;
+      renderRoutePanel();
+    }
+  });
+
+  $routeAddAllBtn.addEventListener("click", () => {
+    const g = getGroup();
+    let added = 0;
+    for (const r of routeState.results){
+      const exists = g.items.find(x => x.url === r.url);
+      if (exists) {
+        exists.enabled = true;
+        exists.name = r.name || exists.name;
+      } else {
+        const id = "ITS_" + (r.coordx.toFixed(6) + "_" + r.coordy.toFixed(6)).replaceAll(".","");
+        g.items.push({ id, name: r.name || id, url: r.url, enabled: true });
+        added++;
+      }
+    }
+    save();
+    alert(`추천 CCTV ${routeState.results.length}개 중 신규 ${added}개 추가했습니다.`);
+  });
+
+  // init
+  load();
+  render();
+})();
+</script>
+</body>
+</html>
